@@ -1,0 +1,119 @@
+// Copyright (c) 2014 Mimetics Inc.
+// All Rights Reserved
+//
+// THIS SOFTWARE IS PROVIDED BY MIMETICS "AS IS" WITHOUT ANY EXPRESSED OR 
+// IMPLIED WARRANTIES.  IN NO CASE SHALL MIMETICS OR ANY CONTRIBUTORS BE
+// LIABLE IN ANY DAMAGES CAUSED BY THE USE OF THIS SOFTWARE.  
+//
+// FileName: ActiveD1.script
+// Version : 01.0
+//
+// Author  : myke predko
+//
+// Description: Updated Object Object Avoidance Program Created for
+//              Active Surplus
+//
+// Release History:
+//  objAv05 - Output the Values using sliders
+//          - Poll button and return
+//          - Updated for 0-100
+//          - Updated for _Header1
+//          - Further Updated for _Header1
+//  objAv06 - Updated to work with icon bmp that does not start with "_"
+//  objAv07 - Corrected Left Front/Side Reversal
+//  
+meta("icon",                "ActiveD1.b");
+meta("description",         "Active Surpls:Object Avoidance Program");
+int                         leftFront;
+int                         rightFront;
+int                         leftSide;
+int                         rightSide;
+int                         rearMiddle;
+str                         outString;
+
+int                         lastTurn = 0;
+
+int                         motorValue          =  80;
+int                         twoFrontSensorValue =  75;
+int                         frontSensorValue    =  65;
+int                         sideSensorValue     =  40;
+int                         rearSensorValue     =  30;
+
+
+    syscall(motorleftset, "0");  syscall(motorrightset, "0");
+
+    syscall(loadpanelfile, "_exec2.p");
+    syscall(setpanelicon, "tools:ActiveD1.b");
+    syscall(loadsubpanelfile, "objAv07.p");
+    syscall(setpaneltext, "pgmname:Object Avoid");
+    syscall(runpanelfile, "");
+
+    syscall(cleardisplay, "");
+    for (; "RUN:" == syscall(tostring, "4:" + syscall(getactivepanelstatus, ""));) {
+        leftFront = stoi(syscall(irleftfront, ""));
+        syscall(setpanelvalue, "leftFront:" + itos(leftFront));
+        rightFront = stoi(syscall(irrightfront, ""));
+        syscall(setpanelvalue, "rightFront:" + itos(rightFront));
+        leftSide = stoi(syscall(irleftside, ""));
+        syscall(setpanelvalue, "leftSide:" + itos(leftSide));
+        rightSide = stoi(syscall(irrightside, ""));
+        syscall(setpanelvalue, "rightSide:" + itos(rightSide));
+        rearMiddle = stoi(syscall(ircenterrear, ""));
+        syscall(setpanelvalue, "rearMiddle:" + itos(rearMiddle));
+        if ((twoFrontSensorValue > leftFront) && (twoFrontSensorValue > rightFront)) {
+            if (rearSensorValue < rearMiddle) {
+                syscall(motorset, itos(-motorValue) + ":" + itos(-motorValue));
+                syscall(delay, itos(300));
+            }
+            if (1 == lastTurn) {
+//                syscall(motorset, itos(-(motorValue / 2)) + ":" + itos(motorValue));
+                syscall(motorset, itos(-(motorValue / 2)) + ":" + itos(motorValue));
+            }
+            else if (2 == lastTurn) {
+//                syscall(motorset, itos(-(motorValue / 2)) + ":" + itos(motorValue));
+                syscall(motorset, itos(motorValue) + ":" + itos(-(motorValue / 2)));
+            }
+            else {
+//            if (50 < syscall(random, "")) {
+                if (leftFront < rightFront) {
+                    lastTurn = 1;
+//                    syscall(motorset, itos(-(motorValue / 2)) + ":" + itos(motorValue));
+                    syscall(motorset, itos(-(motorValue / 2)) + ":" + itos(motorValue));
+                }
+                else {
+                    lastTurn = 2;
+//                    syscall(motorset, itos(motorValue) + ":" + itos(-(motorValue / 2)));
+                    syscall(motorset, itos(motorValue) + ":" + itos(-(motorValue / 2)));
+                }
+            }
+            syscall(delay, itos(350));
+        }
+        else if (rearSensorValue > rearMiddle) {
+            lastTurn = 0;
+            syscall(motorset, itos(motorValue) + ":" + itos(motorValue));
+            syscall(delay, "100");
+        }
+        else if (frontSensorValue > leftFront) {
+            lastTurn = 0;
+            syscall(motorset, itos(motorValue) + ":" + itos(-motorValue));
+        }
+        else if (frontSensorValue > rightFront) {
+            lastTurn = 0;
+            syscall(motorset, itos(-motorValue) + ":" + itos(motorValue));
+        }
+        else if (sideSensorValue > leftSide) {
+            lastTurn = 0;
+            syscall(motorset, itos(motorValue) + ":" + itos(motorValue / 4));
+        }
+        else if (sideSensorValue > rightSide ) {
+            lastTurn = 0;
+            syscall(motorset, itos(motorValue / 4) + ":" + itos(motorValue));
+        }
+        else {
+            lastTurn = 0;
+            syscall(motorleftset, itos(motorValue));  syscall(motorrightset, itos(motorValue));
+        }
+        syscall(delay, "250");
+    }
+
+    syscall(motorleftset, "0");  syscall(motorrightset, "0");
